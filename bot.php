@@ -15,10 +15,24 @@ limitations under the License. */
 
 include("LIB_parse.php");
 
-function login($username, $password, $site)
+define("SITE", "http://forum.xda-developers.com");
+
+
+if($_REQUEST['action'] == 'login'){
+	
+	$status = login($_REQUEST['user'], $_REQUEST['pass']);
+	echo $status;
+}
+
+## TODO: search for user threads
+# http://forum.xda-developers.com/search.php?do=finduser&u=id&starteronly=1
+## TODO: get user threads ID's
+# $last_url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL); // get redirect page
+
+function login($username, $password)
 {
 $post_password = md5($password);
-$targetlogin = $site . "/login.php?do=login";
+$targetlogin = SITE . "/login.php?do=login";
 $ch          = curl_init();
 curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3');
 curl_setopt($ch, CURLOPT_COOKIEJAR, getcwd().'/cookie.txt');
@@ -29,7 +43,15 @@ curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_AUTOREFERER, true);
 curl_setopt($ch, CURLOPT_URL, $targetlogin);
 curl_setopt($ch, CURLOPT_POSTFIELDS, 'vb_login_username=' . $username . '&vb_login_password=&s=&do=login&vb_login_md5password=' . $post_password . '&vb_login_md5password_utf=' . $post_password . '');
-curl_exec($ch);
+
+$respone = curl_exec($ch);
+
+if(preg_match("/thank you/", $respone)){
+	return 1;	
+}else{
+	return 0;
+}
+
 sleep(2);
 }
 
@@ -37,7 +59,7 @@ sleep(2);
 function editpost($id, $title, $message, $iconid)
 {
 $post_password = md5($password);
-$target = $site . "/showpost.php?p=" . $id;
+$target = SITE . "/showpost.php?p=" . $id;
 curl_setopt($ch, CURLOPT_POST, false);
 $gotPage = curl_exec($ch);
 
@@ -61,7 +83,7 @@ $loggedinuser_tag = return_between($string = $gotPage, $start = "<input type=\"h
 $loggedinuser     = str_replace("\"", "", $loggedinuser_tag);
 $loggedinuser     = str_replace("value=", "", $loggedinuser);
 
-$ptarget = $site . "/editpost.php?do=updatepost&postid=" . $id;
+$ptarget = SITE . "/editpost.php?do=updatepost&postid=" . $id;
 curl_setopt($ch, CURLOPT_URL, $ptarget);
 curl_setopt($ch, CURLOPT_POSTFIELDS, 'reason=&title=' . $title . '&message=' . $message . '&wysiwyg=0&iconid=' . $iconid . '&s=&securitytoken=' . $securitytoken . '&do=updatepost&t=' . $t . '&p=' . $id . '&posthash=' . $posthash . '&poststarttime=' . $poststarttime . '&sbutton=Save+Changes&signature=1&parseurl=1&emailupdate=9999');
 curl_setopt($ch, CURLOPT_HEADER, 0);
